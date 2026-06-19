@@ -157,3 +157,28 @@ async def upload_pdf(file: UploadFile = File(...)):
             status_code=500,
             content={"error": str(e)}
         )
+
+@app.post("/query")
+async def query_pdf(payload: dict):
+    try:
+        question = payload.get("question")
+        top_k = int(payload.get("top_k", 5))
+
+        query_vec = embed_texts([question])[0]
+
+        store = QdrantStorage()
+        found = store.search(query_vec, top_k)
+
+        return {
+            "contexts": found["contexts"],
+            "sources": found["sources"]
+        }
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
+
+
+inngest.fast_api.serve(app, inngest_client,[rag_ingest_pdf, rag_query_pdf_ai])
