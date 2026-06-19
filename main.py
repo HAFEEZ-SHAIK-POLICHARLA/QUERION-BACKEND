@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+    from fastapi import FastAPI, UploadFile, File
 import logging
 import inngest
 import inngest.fast_api
@@ -169,8 +169,51 @@ async def query_pdf(payload: dict):
         store = QdrantStorage()
         found = store.search(query_vec, top_k)
 
+        context_block = "\n\n".join(
+            f"- {c}" for c in found["contexts"]
+        )
+
+        user_content = (
+            "You are a retrieval-augmented assistant.\n\n"
+            "Answer ONLY using the provided context.\n"
+            "Do NOT use outside knowledge.\n"
+            "Do NOT make assumptions.\n"
+            "If the answer cannot be found in the context, respond with:\n"
+            "'I could not find the answer in the provided documents.'\n\n"
+            f"Context:\n{context_block}\n\n"
+            f"Question:\n{question}\n\n"
+            "Provide a precise answer based solely on the context."
+        )
+
+        adapter = ai.openai.Adapter(
+            auth_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url="https://openrouter.ai/api/v1",
+            model="openrouter/auto",
+            headers={
+                "HTTP-Referer": "http://localhost:8000",
+                "X-Title": "RAG Production App"
+            }
+        )
+
+        response = await adapter.chat_completions_create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You answer using only the provided context."
+                },
+                {
+                    "role": "user",
+                    "content": user_content
+                }
+            ],
+            max_tokens=512,
+            temperature=0.2
+        )
+
+        answer = response["choices"][0]["message"]["content"].strip()
+
         return {
-            "contexts": found["contexts"],
+            "answer": answer,
             "sources": found["sources"]
         }
 
