@@ -1,4 +1,4 @@
-    from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File
 import logging
 import inngest
 import inngest.fast_api
