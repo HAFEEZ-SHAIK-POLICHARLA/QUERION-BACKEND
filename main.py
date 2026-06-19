@@ -120,11 +120,40 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
 
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {
-        "status": "ok",
-        "service": "querion-backend"
-    }
+@app.post("/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        temp_dir = Path(tempfile.gettempdir())
+        pdf_path = temp_dir / file.filename
 
-inngest.fast_api.serve(app, inngest_client,[rag_ingest_pdf, rag_query_pdf_ai])
+        with open(pdf_path, "wb") as f:
+            f.write(await file.read())
+
+        chunks = load_and_chunk_pdf(str(pdf_path))
+        vecs = embed_texts(chunks)
+
+        source_id = file.filename
+
+        ids = [
+            str(uuid.uuid5(uuid.NAMESPACE_URL, f"{source_id}:{i}"))
+            for i in range(len(chunks))
+        ]
+
+        payloads = [
+            {"source": source_id, "text": chunks[i]}
+            for i in range(len(chunks))
+        ]
+
+        QdrantStorage().upsert(ids, vecs, payloads)
+
+        return {
+            "success": True,
+            "chunks": len(chunks),
+            "source": source_id
+        }
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
