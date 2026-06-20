@@ -1,10 +1,8 @@
-
 from openai import AsyncOpenAI
 from fastapi import FastAPI, UploadFile, File
 import logging
 import inngest
 import inngest.fast_api
-from inngest.experimental import ai
 from dotenv import load_dotenv
 import uuid
 import os
@@ -154,18 +152,18 @@ async def upload_pdf(file: UploadFile = File(...)):
             "source": source_id
         }
 
-   except Exception as e:
-    import traceback
+    except Exception as e:
+        import traceback
 
-    traceback.print_exc()
+        traceback.print_exc()
 
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": str(e),
-            "type": type(e).__name__
-        }
-    )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "type": type(e).__name__
+            }
+        )
 
 @app.post("/query")
 async def query_pdf(payload: dict):
@@ -223,10 +221,10 @@ async def query_pdf(payload: dict):
         }       
 
     except Exception as e:
-    return JSONResponse(
-        status_code=500,
-        content={"error": str(e)}
-    )
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 
 inngest.fast_api.serve(app, inngest_client,[rag_ingest_pdf, rag_query_pdf_ai])
