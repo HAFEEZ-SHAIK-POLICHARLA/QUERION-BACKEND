@@ -154,11 +154,18 @@ async def upload_pdf(file: UploadFile = File(...)):
             "source": source_id
         }
 
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
+   except Exception as e:
+    import traceback
+
+    traceback.print_exc()
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": str(e),
+            "type": type(e).__name__
+        }
+    )
 
 @app.post("/query")
 async def query_pdf(payload: dict):
@@ -216,16 +223,9 @@ async def query_pdf(payload: dict):
         }       
 
     except Exception as e:
-    import traceback
-
-    traceback.print_exc()
-
     return JSONResponse(
         status_code=500,
-        content={
-            "error": str(e),
-            "type": type(e).__name__
-        }
+        content={"error": str(e)}
     )
 
 
