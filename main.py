@@ -216,10 +216,17 @@ async def query_pdf(payload: dict):
         }       
 
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )
+    import traceback
+
+    traceback.print_exc()
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": str(e),
+            "type": type(e).__name__
+        }
+    )
 
 
 inngest.fast_api.serve(app, inngest_client,[rag_ingest_pdf, rag_query_pdf_ai])
