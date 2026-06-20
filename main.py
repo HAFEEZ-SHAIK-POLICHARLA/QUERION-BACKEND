@@ -1,3 +1,5 @@
+
+from openai import AsyncOpenAI
 from fastapi import FastAPI, UploadFile, File
 import logging
 import inngest
@@ -185,17 +187,13 @@ async def query_pdf(payload: dict):
             "Provide a precise answer based solely on the context."
         )
 
-        adapter = ai.openai.Adapter(
-            auth_key=os.getenv("OPENROUTER_API_KEY"),
-            base_url="https://openrouter.ai/api/v1",
-            model="openrouter/auto",
-            headers={
-                "HTTP-Referer": "http://localhost:8000",
-                "X-Title": "RAG Production App"
-            }
+        client = AsyncOpenAI(
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            base_url="https://openrouter.ai/api/v1"
         )
 
-        response = await adapter.chat_completions_create(
+        response = await client.chat.completions.create(
+            model="openrouter/auto",
             messages=[
                 {
                     "role": "system",
@@ -210,12 +208,12 @@ async def query_pdf(payload: dict):
             temperature=0.2
         )
 
-        answer = response["choices"][0]["message"]["content"].strip()
+        answer = response.choices[0].message.content.strip()
 
         return {
             "answer": answer,
             "sources": found["sources"]
-        }
+        }       
 
     except Exception as e:
         return JSONResponse(
